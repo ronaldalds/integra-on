@@ -38,6 +38,7 @@ class InteracaoAdmin(ModelAdmin):
     list_display = (
         "chave",
         "chamado",
+        "data_criacao",
         "seguencia",
         "status_acao_nome_relatorio",
         "fantasia_fornecedor",
