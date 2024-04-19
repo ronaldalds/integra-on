@@ -1,4 +1,6 @@
+import re
 from django.db import models
+from django.core.exceptions import ValidationError
 
 
 class Chamado(models.Model):
@@ -33,6 +35,7 @@ class Chamado(models.Model):
 
 class Interacao(models.Model):
     chave = models.IntegerField(primary_key=True)
+    data_criacao = models.DateField()
     chamado = models.ForeignKey(Chamado, on_delete=models.PROTECT)
     seguencia = models.IntegerField()
     status_acao_nome_relatorio = models.CharField(max_length=128)

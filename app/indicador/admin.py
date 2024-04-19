@@ -1,5 +1,4 @@
 from django.contrib.admin import ModelAdmin, register
-from utils.desk.drive import Desk
 from .models import Chamado, Interacao
 
 

@@ -3,6 +3,7 @@ from django.db.models import Max, Count, F
 from .models import Chamado, Interacao
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
+from time import sleep, time
 
 
 class CargaIndicadores:
@@ -155,6 +156,7 @@ class CargaIndicadores:
         print(data)
         interacao = Interacao()
         interacao.chave = data.get("Chave")
+        interacao.data_criacao = datetime.strptime(data.get("DataCriacao"), "%Y-%m-%d")
         interacao.chamado = data.get("chamado")
         interacao.seguencia = data.get("Sequencia")
         interacao.status_acao_nome_relatorio = data.get("Status")[0].get("text")
