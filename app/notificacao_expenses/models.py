@@ -36,7 +36,7 @@ class LogNotificacao(models.Model):
 class Notificar(models.Model):
     nome = models.CharField(max_length=256)
     gestor_id = models.ForeignKey(GestorExpense, on_delete=models.PROTECT)
-    grupo = models.IntegerField()
+    grupo = models.BigIntegerField()
     operacao = models.CharField(max_length=128)
     token_bot = models.CharField(max_length=256)
     ativo = models.BooleanField(default=False)
