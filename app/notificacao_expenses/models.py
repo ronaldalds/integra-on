@@ -26,7 +26,7 @@ class UserVexpenses(models.Model):
 
 class LogNotificacao(models.Model):
     user_id = models.ForeignKey(UserVexpenses, on_delete=models.PROTECT)
-    grupo = models.IntegerField()
+    grupo = models.BigIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
     avulso = models.IntegerField()
     aberto = models.IntegerField()
