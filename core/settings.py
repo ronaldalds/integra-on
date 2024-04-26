@@ -42,9 +42,11 @@ INSTALLED_APPS = [
 
     # Utils
     'utils.desk',
+    'utils.vexpenses',
 
     # APP
     'app.indicador',
+    'app.notificacao_expenses',
 
 ]
 
