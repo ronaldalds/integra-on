@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     # Utils
     'utils.desk',
     'utils.vexpenses',
+    'utils.mkat',
 
     # APP
     'app.indicador',
