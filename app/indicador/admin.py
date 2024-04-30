@@ -11,13 +11,20 @@ class ChamadoAdmin(ModelAdmin):
         "qnt_interacao",
         "nome_grupo",
         "nome_categoria",
+        "data_hora_criacao",
         "data_finalizacao",
         "nome_operador",
         "nome_status",
         "nome_sistema",
         )
     list_display_links = list_display
-    list_filter = ("andamento", "nome_status", "nome_categoria", "nome_operador")
+    list_filter = (
+        "data_hora_criacao",
+        "andamento",
+        "nome_status",
+        "nome_categoria",
+        "nome_operador"
+    )
 
     search_fields = [
         "chave",
@@ -38,8 +45,8 @@ class InteracaoAdmin(ModelAdmin):
     list_display = (
         "chave",
         "chamado",
-        "data_criacao",
-        "seguencia",
+        "data_hora_criacao",
+        "sequencia",
         "status_acao_nome_relatorio",
         "fantasia_fornecedor",
         "chamado_aprovadores",
@@ -50,7 +57,7 @@ class InteracaoAdmin(ModelAdmin):
         "chamado__cod_chamado",
         "chamado__assunto",
     ]
-
+    list_filter = ("data_hora_criacao",)
     readonly_fields = [
         "tempo_corrido_interacao",
     ]

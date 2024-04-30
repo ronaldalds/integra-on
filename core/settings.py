@@ -42,12 +42,13 @@ INSTALLED_APPS = [
 
     # Utils
     'utils.desk',
-    'utils.vexpenses',
-    'utils.mkat',
+    # 'utils.vexpenses',
+    # 'utils.mkat',
 
     # APP
     'app.indicador',
-    'app.notificacao_expenses',
+    # 'app.notificacao_expenses',
+    # 'app.ost',
 
 ]
 

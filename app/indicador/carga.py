@@ -1,14 +1,44 @@
 from utils.desk.drive import Desk
+from pytz import timezone
 from django.db.models import Max, Count, F
 from .models import Chamado, Interacao
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
-from time import sleep, time
+from time import sleep
 
 
 class CargaIndicadores:
     def __init__(self):
         self.desk = Desk()
+        self.fuso_horario = timezone("America/Fortaleza")
+
+    def data_hora_chamado(self):
+        chamado_sem_hora = Chamado.objects.filter(data_hora_criacao=None)
+        lista = [item.cod_chamado for item in chamado_sem_hora[0:300]]
+        print(lista)
+        if lista:
+            chamados = self.desk.lista_chamados(pesquisa=",".join(lista))
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                executor.map(self.chamado, chamados.get("root"))
+
+    def data_hora_interacao(self):
+        integracao_sem_hora = Interacao.objects.filter(data_hora_criacao=None)
+        lista = integracao_sem_hora[0:10]
+        print(lista)
+        def __save_interacao(interacao: Interacao):
+            interacoes = self.desk.lista_interacao(interacao.chamado.chave)
+            for data in interacoes.get("root"):
+                if data.get("Sequencia") == interacao.sequencia:
+                    data_hora = datetime.strptime(
+                        f"{data.get('DataCriacao')} {data.get("HoraCriacao")}",
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+                    data_hora_com_fuso = self.fuso_horario.localize(data_hora)
+                    interacao.data_hora_criacao = data_hora_com_fuso
+                    interacao.save()
+        if lista:
+            with ThreadPoolExecutor(max_workers=10) as executor:
+                executor.map(__save_interacao, lista)
 
     def atualizar(self):
         novo = self.desk.total_chamados()
@@ -30,6 +60,7 @@ class CargaIndicadores:
         self.atualizar_chamado(chamados_em_aberto.get("root"))
         with ThreadPoolExecutor(max_workers=1) as executor:
             executor.map(self.modificar, chamados_em_aberto.get("root"))
+        self.data_hora_chamado()
         print(f"[{datetime.now()}] Finalizado chamados...")
 
     def tempo_atendimento(self, tempo: str):
@@ -90,6 +121,12 @@ class CargaIndicadores:
         chamado.nome_grupo = data.get("NomeGrupo", "")
         chamado.nome_categoria = data.get("NomeCategoria", "")
         chamado.assunto = data.get("Assunto", "")
+        data_hora = datetime.strptime(
+            f"{data.get('DataCriacao')} {data.get("HoraCriacao")}",
+            "%Y-%m-%d %H:%M:%S"
+        )
+        data_hora_com_fuso = self.fuso_horario.localize(data_hora)
+        chamado.data_hora_criacao = data_hora_com_fuso
         chamado.data_criacao = datetime.strptime(data.get("DataCriacao"), "%Y-%m-%d")
         if data.get("DataFinalizacao", "") == "0000-00-00":
             chamado.data_finalizacao = None
@@ -134,7 +171,6 @@ class CargaIndicadores:
         print(lista)
         if lista:
             chamados = self.desk.lista_chamados(pesquisa=",".join(lista))
-            print(chamados.get("root"))
             with ThreadPoolExecutor(max_workers=1) as executor:
                 executor.map(self.chamado, chamados.get("root"))
 
@@ -142,8 +178,10 @@ class CargaIndicadores:
         chamados = Chamado.objects.annotate(
             numero_interacao=Count("interacao")
         ).filter(numero_interacao__lt=F('qnt_interacao')).order_by("-chave")
+        lista_chamados = chamados[0:50]
         with ThreadPoolExecutor(max_workers=50) as executor:
-            executor.map(self.atualizar_interacao, chamados)
+            executor.map(self.atualizar_interacao, lista_chamados)
+        self.data_hora_interacao()
 
     def atualizar_interacao(self, chamado: Chamado):
         interacoes = self.desk.lista_interacao(chamado.chave)
@@ -153,12 +191,17 @@ class CargaIndicadores:
                 self.interacao(interacao)
 
     def interacao(self, data: dict) -> None:
-        print(data)
         interacao = Interacao()
         interacao.chave = data.get("Chave")
+        data_hora = datetime.strptime(
+            f"{data.get('DataCriacao')} {data.get("HoraCriacao")}",
+            "%Y-%m-%d %H:%M:%S"
+        )
+        data_hora_com_fuso = self.fuso_horario.localize(data_hora)
+        interacao.data_hora_criacao = data_hora_com_fuso
         interacao.data_criacao = datetime.strptime(data.get("DataCriacao"), "%Y-%m-%d")
         interacao.chamado = data.get("chamado")
-        interacao.seguencia = data.get("Sequencia")
+        interacao.sequencia = data.get("Sequencia")
         interacao.status_acao_nome_relatorio = data.get("Status")[0].get("text")
         interacao.fantasia_fornecedor = data.get("FantasiaFornecedor", "")
         interacao.chamado_aprovadores = data.get("ChamadoAprovadores", "")

@@ -11,6 +11,7 @@ class Chamado(models.Model):
     nome_categoria = models.CharField(max_length=256, null=True, blank=True)
     assunto = models.CharField(max_length=512, null=True, blank=True)
     data_criacao = models.DateField()
+    data_hora_criacao = models.DateTimeField(null=True, blank=True)
     data_finalizacao = models.DateField(null=True, blank=True)
     nome_operador = models.CharField(max_length=128, null=True, blank=True)
     nome_status = models.CharField(max_length=128, null=True, blank=True)
@@ -36,8 +37,9 @@ class Chamado(models.Model):
 class Interacao(models.Model):
     chave = models.IntegerField(primary_key=True)
     data_criacao = models.DateField()
+    data_hora_criacao = models.DateTimeField(null=True, blank=True)
     chamado = models.ForeignKey(Chamado, on_delete=models.PROTECT)
-    seguencia = models.IntegerField()
+    sequencia = models.IntegerField()
     status_acao_nome_relatorio = models.CharField(max_length=128)
     fantasia_fornecedor = models.CharField(max_length=128, null=True, blank=True)
     chamado_aprovadores = models.CharField(max_length=1024, null=True, blank=True)
@@ -47,4 +49,4 @@ class Interacao(models.Model):
         verbose_name_plural = 'Interações'
 
     def __str__(self):
-        return f"{self.chamado} - {self.seguencia}"
+        return f"{self.chamado} - {self.sequencia}"
