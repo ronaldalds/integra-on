@@ -15,7 +15,8 @@ from .models import (
 
 
 class Notificacao:
-    def __init__(self):
+    def __init__(self, mk: int):
+        self.mk = mk
         self.mkat = Mkat()
 
     def informacaoes(self, tipo_os: str) -> list[InformacaoOs]:
@@ -27,13 +28,13 @@ class Notificacao:
             return InformacaoOs.objects.filter(id_tipo_os=TipoOs.objects.filter(tipo="PADRAO").first().pk)
 
     def enviar_messagem(self, nome_bot: str, nome_chat: str, message: str):
-        token = BotTelegram.objects.filter(nome=nome_bot).first().token
-        chat_id = UserTelegram.objects.filter(nome=nome_chat).first().id
+        token = BotTelegram.objects.filter(nome=nome_bot, ativo=True).first().token
+        chat_id = UserTelegram.objects.filter(nome=nome_chat, mk=self.mk).first().id
         bot_telegram = telebot.TeleBot(token, parse_mode=None)
         bot_telegram.send_message(chat_id=chat_id, text=message)
 
     def notificacao_agendamento(self) -> None:
-        agendamentos = self.mkat.agenda_os()
+        agendamentos = self.mkat.agenda_os(mk=self.mk)
         for agenda in agendamentos:
             ordem_servico: dict = agenda.get("os", {})
             encerrado: bool = ordem_servico.get("encerrado", False)
@@ -42,36 +43,39 @@ class Notificacao:
                 self.verificar_os(ordem_servico)
 
     def verificar_os(self, ordem_servico: dict) -> None:
-        tipo_os: dict = ordem_servico.get("tipo_os", {})
         motivo: str = ordem_servico.get("motivo", "")
-        descricao_tipo_os: str = tipo_os.get("descricao", "PADRAO")
         informacoes_os = self.informacaoes(descricao_tipo_os)
-        cod = ordem_servico.get('cod', '')
+        detalhes = []
+        for detalhe in informacoes_os:
+            if detalhe.nome.replace(":", "") not in motivo:
+                detalhes.append(detalhe.nome)
+
+        if not detalhes: return
+        tipo_os: dict = ordem_servico.get("tipo_os", {})
+        descricao_tipo_os: str = tipo_os.get("descricao", "PADRAO")
+        cod = ordem_servico.get('cod')
         operador_abertura = ordem_servico.get('operador_abertura', '')
-        for detalhes in informacoes_os:
-            msg_os = f"OS {cod} - {descricao_tipo_os}."
-            msg_operador = f"Operador {operador_abertura}."
-            msg_detalhe = f"Falta detalhe ({detalhes.nome}) no motivo da O.S."
-            msg = f"🔴 🟡 🟢\n\n{msg_os}\n{msg_operador}\n{msg_detalhe}"
-            if detalhes.nome.replace(":", "") not in motivo:
-                if not ErrorOs.objects.filter(
-                    os=ordem_servico.get('cod', ''),
-                    tipo=descricao_tipo_os,
-                    operador=ordem_servico.get('operador_abertura', ''),
-                    detalhe=detalhes.nome
-                ).exists():
-                    error = ErrorOs(
-                        os=ordem_servico.get('cod', ''),
-                        tipo=descricao_tipo_os,
-                        operador=ordem_servico.get('operador_abertura', ''),
-                        detalhe=detalhes.nome
-                    )
-                    error.save()
-                self.enviar_messagem(nome_bot="TELEGRAM_OST", nome_chat="GRUPO_NOTIFICACAO_OST", message=msg)
-                time.sleep(7)
+        msg_os = f"OS {cod} - {descricao_tipo_os}."
+        msg_operador = f"Operador {operador_abertura}."
+        msg_detalhe = f"Falta detalhe {detalhes} no motivo da O.S."
+        msg = f"🔴 🟡 🟢\n\n{msg_os}\n{msg_operador}\n{msg_detalhe}"
+        if not ErrorOs.objects.filter(os=ordem_servico.get('cod')).exists():
+            error = ErrorOs(
+                os=ordem_servico.get('cod', ''),
+                tipo=descricao_tipo_os,
+                operador=ordem_servico.get('operador_abertura', ''),
+                detalhe=msg
+            )
+            error.save()
+        self.enviar_messagem(
+            nome_bot="TELEGRAM_OST",
+            nome_chat=f"GRUPO_NOTIFICACAO_OST",
+            message=msg
+        )
+        time.sleep(7)
 
     def sla_os(self, Tipo_OS) -> int | None:
-        tipo = TipoOs.objects.filter(tipo=Tipo_OS, status=True).first()
+        tipo = TipoOs.objects.filter(tipo=Tipo_OS, ativo=True).first()
         if tipo:
             return tipo.sla
         else:
@@ -95,7 +99,7 @@ class Notificacao:
             cod_os=Cod_OS,
             chat_id=ID_Tecnico,
             sla=Tempo_Aviso,
-            status=True
+            envio=True
         )
         horario = data_abertura.strftime("%d/%m/%Y %H:%M")
         Nome_Tecnico_Formatado = Nome_Tecnico.replace('.', ' ').title()
@@ -117,11 +121,11 @@ class Notificacao:
             )
             try:
                 self.enviar_messagem(nome_bot="TELEGRAM_OST", nome_chat=ID_Tecnico, message=msg)
-                tm.status = True
+                tm.envio = True
                 tm.save()
             except Exception:
                 self.enviar_messagem(nome_bot="TELEGRAM_OST", nome_chat="ADMINISTRADOR", message=msg)
-                tm.status = False
+                tm.envio = False
                 tm.save()
             time.sleep(7)
 
@@ -132,10 +136,10 @@ class Notificacao:
 
     def notificacao_sla(self):
         print('Rodando : ', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-        lista_tecnicos = UserTelegram.objects.filter(ativo=True)
+        lista_tecnicos = UserTelegram.objects.filter(ativo=True, mk=self.mk)
         for tecnico in lista_tecnicos:
             print(f"id: {tecnico.id} Nome: {tecnico.nome}")
-            agenda_Tecnico = self.mkat.agenda_tecnico(tecnico.nome)
+            agenda_Tecnico = self.mkat.agenda_tecnico(tecnico=tecnico.nome, mk=self.mk)
             tempo_aviso = self.tempo_de_aviso()
             for agenda in agenda_Tecnico:
                 data_obj = datetime.strptime(agenda['os']['data_abertura'], "%Y-%m-%dT%H:%M:%S.%fZ")

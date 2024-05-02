@@ -3,6 +3,7 @@ from django.db import models
 
 class UserTelegram(models.Model):
     chat_id = models.BigIntegerField(primary_key=True, unique=True)
+    mk = models.IntegerField()
     nome = models.CharField(max_length=256)
     ativo = models.BooleanField(default=False)
 
@@ -10,12 +11,13 @@ class UserTelegram(models.Model):
 class BotTelegram(models.Model):
     nome = models.CharField(max_length=256)
     token = models.CharField(max_length=256)
+    ativo = models.BooleanField(default=False)
 
 
 class TipoOs(models.Model):
     tipo = models.CharField(max_length=300)
     sla = models.IntegerField()
-    status = models.BooleanField(default=True)
+    ativo = models.BooleanField(default=True)
 
     def __str__(self) -> str:
         return str(self.tipo)
@@ -31,7 +33,7 @@ class TecnicoMensagem(models.Model):
     sla = models.IntegerField()
     cod_os = models.IntegerField()
     data_envio = models.DateTimeField(auto_now=True)
-    status = models.BooleanField(default=True)
+    envio = models.BooleanField(default=True)
 
     def __str__(self) -> str:
         return str(self.chat_id)
@@ -69,9 +71,9 @@ class Log(models.Model):
 
 
 class ErrorOs(models.Model):
-    os = models.CharField(max_length=32)
-    tipo = models.CharField(max_length=32)
-    operador = models.CharField(max_length=32)
-    detalhe = models.CharField(max_length=32)
+    os = models.BigIntegerField(primary_key=True, unique=True)
+    tipo = models.CharField(max_length=128)
+    operador = models.CharField(max_length=128)
+    detalhe = models.TextField()
     created_at = models.DateTimeField(auto_now=True)
 

@@ -9,8 +9,11 @@ class OstConfig(AppConfig):
         from .integracao import Notificacao
         from apscheduler.schedulers.background import BackgroundScheduler
         sheduler = BackgroundScheduler(daemon=True)
-        notificacao = Notificacao()
+        notificacao_1 = Notificacao(mk=1)
+        notificacao_3 = Notificacao(mk=3)
         sheduler.configure(timezone="america/fortaleza")
-        sheduler.add_job(notificacao.notificacao_sla, 'interval', minutes=10)
-        sheduler.add_job(notificacao.notificacao_agendamento, 'interval', minutes=15)
+        sheduler.add_job(notificacao_1.notificacao_sla, 'interval', minutes=30)
+        sheduler.add_job(notificacao_3.notificacao_sla, 'interval', minutes=30)
+        sheduler.add_job(notificacao_1.notificacao_agendamento, 'interval', minutes=15)
+        sheduler.add_job(notificacao_3.notificacao_agendamento, 'interval', minutes=15)
         sheduler.start()
