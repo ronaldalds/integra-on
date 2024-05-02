@@ -162,5 +162,5 @@ class Notificacao:
                     sla_1 = (sla_max - hora_passada) >= 0
                     sla_2 = (sla_max - hora_passada) <= aviso
                     if sla_1 and sla_2:
-                        self.notificar(cod_os, tecnico.id, aviso, tecnico.nome, tipo_os, horario_abertura)
+                        self.notificar(cod_os, tecnico.chat_id, aviso, tecnico.nome, tipo_os, horario_abertura)
                         Log.objects.create()
