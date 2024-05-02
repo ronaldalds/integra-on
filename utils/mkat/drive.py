@@ -11,7 +11,7 @@ class Mkat:
     def __init__(self) -> None:
         self.session = requests.Session()
         self.__url_agenda_tecnico = URL_TECNICO
-        self.__url_agenda_os = URL_TECNICO
+        self.__url_agenda_os = URL_OS
 
     def _make_request(self, url, data_json):
         try:
@@ -25,7 +25,7 @@ class Mkat:
         return None
 
     def agenda_os(self, mk: int):
-        auth = UserMkat.objects.get(nome="TOKEN_MKAT")
+        auth = UserMkat.objects.filter(nome="TOKEN_MKAT").first()
         data_json = {
             "token": auth.token,
             "de": datetime.now().strftime('%Y-%m-%d'),
@@ -38,7 +38,7 @@ class Mkat:
                 return response.json()
 
     def agenda_tecnico(self, tecnico, mk: int):
-        auth = UserMkat.objects.get(nome="TOKEN_MKAT")
+        auth = UserMkat.objects.filter(nome="TOKEN_MKAT").first()
         data_json = {
             "token": auth.token,
             "tecnico": tecnico,

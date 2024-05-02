@@ -29,7 +29,7 @@ class Notificacao:
 
     def enviar_messagem(self, nome_bot: str, nome_chat: str, message: str):
         token = BotTelegram.objects.filter(nome=nome_bot, ativo=True).first().token
-        chat_id = UserTelegram.objects.filter(nome=nome_chat, mk=self.mk).first().id
+        chat_id = UserTelegram.objects.filter(nome=nome_chat, mk=self.mk).first().chat_id
         bot_telegram = telebot.TeleBot(token, parse_mode=None)
         bot_telegram.send_message(chat_id=chat_id, text=message)
 
@@ -44,6 +44,8 @@ class Notificacao:
 
     def verificar_os(self, ordem_servico: dict) -> None:
         motivo: str = ordem_servico.get("motivo", "")
+        tipo_os: dict = ordem_servico.get("tipo_os", {})
+        descricao_tipo_os: str = tipo_os.get("descricao", "PADRAO")
         informacoes_os = self.informacaoes(descricao_tipo_os)
         detalhes = []
         for detalhe in informacoes_os:
@@ -51,8 +53,6 @@ class Notificacao:
                 detalhes.append(detalhe.nome)
 
         if not detalhes: return
-        tipo_os: dict = ordem_servico.get("tipo_os", {})
-        descricao_tipo_os: str = tipo_os.get("descricao", "PADRAO")
         cod = ordem_servico.get('cod')
         operador_abertura = ordem_servico.get('operador_abertura', '')
         msg_os = f"OS {cod} - {descricao_tipo_os}."
@@ -139,9 +139,9 @@ class Notificacao:
         lista_tecnicos = UserTelegram.objects.filter(ativo=True, mk=self.mk)
         for tecnico in lista_tecnicos:
             print(f"id: {tecnico.chat_id} Nome: {tecnico.nome}")
-            agenda_Tecnico = self.mkat.agenda_tecnico(tecnico=tecnico.nome, mk=self.mk)
+            agenda_tecnico = self.mkat.agenda_tecnico(tecnico=tecnico.nome, mk=self.mk)
             tempo_aviso = self.tempo_de_aviso()
-            for agenda in agenda_Tecnico:
+            for agenda in agenda_tecnico:
                 data_obj = datetime.strptime(agenda['os']['data_abertura'], "%Y-%m-%dT%H:%M:%S.%fZ")
                 hora_obj = datetime.strptime(agenda['os']['hora_abertura'].split(".")[0], "%H:%M:%S")
                 horario_abertura = data_obj.replace(
@@ -156,8 +156,8 @@ class Notificacao:
                 hora_passada = self.diferenca_hora(horario_abertura)
                 sla_max = self.sla_os(tipo_os)
 
-                if encerrado: return
-                if not sla_max: return
+                if encerrado: continue
+                if not sla_max: continue
                 for aviso in tempo_aviso:
                     sla_1 = (sla_max - hora_passada) >= 0
                     sla_2 = (sla_max - hora_passada) <= aviso
