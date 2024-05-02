@@ -138,7 +138,7 @@ class Notificacao:
         print('Rodando : ', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         lista_tecnicos = UserTelegram.objects.filter(ativo=True, mk=self.mk)
         for tecnico in lista_tecnicos:
-            print(f"id: {tecnico.id} Nome: {tecnico.nome}")
+            print(f"id: {tecnico.chat_id} Nome: {tecnico.nome}")
             agenda_Tecnico = self.mkat.agenda_tecnico(tecnico=tecnico.nome, mk=self.mk)
             tempo_aviso = self.tempo_de_aviso()
             for agenda in agenda_Tecnico:
