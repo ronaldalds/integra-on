@@ -120,7 +120,7 @@ class Notificacao:
                 cod_os=Cod_OS,
             )
             try:
-                self.enviar_messagem(nome_bot="TELEGRAM_OST", nome_chat=ID_Tecnico, message=msg)
+                self.enviar_messagem(nome_bot="TELEGRAM_OST", nome_chat=Nome_Tecnico, message=msg)
                 tm.envio = True
                 tm.save()
             except Exception:
