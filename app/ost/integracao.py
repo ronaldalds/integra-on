@@ -29,9 +29,9 @@ class Notificacao:
 
     def enviar_messagem(self, nome_bot: str, nome_chat: str, message: str):
         token = BotTelegram.objects.filter(nome=nome_bot, ativo=True).first().token
-        chat_id = UserTelegram.objects.filter(nome=nome_chat, mk=self.mk).first().chat_id
+        id = UserTelegram.objects.filter(nome=nome_chat).first().chat_id
         bot_telegram = telebot.TeleBot(token, parse_mode=None)
-        bot_telegram.send_message(chat_id=chat_id, text=message)
+        bot_telegram.send_message(chat_id=id, text=message)
 
     def notificacao_agendamento(self) -> None:
         agendamentos = self.mkat.agenda_os(mk=self.mk)
